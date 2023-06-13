@@ -1,11 +1,14 @@
-#include<iostream>
-#include<fstream>
+#include <iostream>
 #include<string>
-#include <vector>
-#include <algorithm>
-#include <iterator>
+#include<fstream>
+#include<algorithm>
+#include<stdio.h>
 #include<sstream>
+#include <typeinfo>
 using namespace std;
+
+
+
 
 int displayHelp(){
 	cout<<"=============================================================="<<endl;
@@ -23,9 +26,29 @@ int displayHelp(){
 	cout<<"Exit:                                     :Exit the program"<<endl;	
 }
 
+size_t getWhiteSpacePos(string input){
+	return input.find(' ');
+}
+
+bool locationExists(string location){
+	ifstream locationsFile("locations.txt");
+	string line, lines;
+	
+	while(getline(locationsFile, line)){
+		
+		if(line==location){
+			locationsFile.close();
+			return true;
+		}
+	}
+	locationsFile.close();
+	return false;
+	
+		
+	}
 
 int main(){
-	string input,location;
+	string input;
 	
 	cout<<" ================================================================================ "<<endl;
 	cout<<"*                 Welcome to disease Cases reporting system                          *"<<endl;
@@ -37,275 +60,148 @@ int main(){
 	cout<<"                =================================================                     "<<endl;
 	cout<<"                =================================================                     "<<endl;
 	cout<<" Starting time:Thu April 5 \n Need help? type help then press enter key \n            "<<endl;
-
-	
-	
 	while(true){
-	cout<<"Console>";	
-	getline(cin, input);
-		
+		cout<<"Console>";
+		getline(cin, input);
+		if(input=="Exit"){
+			cout<<"------------Exiting program--------"<<endl;
+		     break;
+		}
+		if(input=="help"){
+			displayHelp();
+		}
+		else if(input.substr(0,3)=="add"){
+			size_t pos=getWhiteSpacePos(input);
+			string location=input.substr(pos+1);
+			transform(location.begin(), location.end(), location.begin(), ::toupper);
 	
-	if(input=="Exit"){
-		cout<<"------------Exiting program--------"<<endl;
-		break;
+			if(locationExists(location)){
+			cout<<"Location already exists!!"<<endl;
+			}
+			else{
+			ofstream locationsFile("locations.txt", ios_base::app);
+			locationsFile << location << endl;
+			locationsFile.close();
+			cout<<location << " successfully added"<<endl;	
+			}
+			
+		}
+		else if(input.substr(0,6)=="delete"){
+			size_t pos=getWhiteSpacePos(input);
+			string location=input.substr(pos+1);
+			ifstream locationsFile("locations.txt");
+			string line;
+			ofstream tempFile("temp.txt", ios_base::app);
+			transform(location.begin(), location.end(), location.begin(), ::toupper);
+			if(locationExists(location)){
+			while(getline(locationsFile, line))	{
+				if(!(line==location)){
+					tempFile << line << endl;
+				}
+			
+				
+			}
+			locationsFile.close();
+			tempFile.close();
+			remove("locations.txt");
+			rename("temp.txt", "locations.txt");
+			cout<<"Location deleted"<<endl;
+			}
+			else{
+				cout<<"Location doesn't exist"<<endl;
+			}
+			
+		}
+		else if(input=="list locations"){
+			ifstream locationsFile("locations.txt");
+			string line;
+			while(getline(locationsFile, line)){
+				cout<<line<<endl;
+			}
+		}
+		else if(input.substr(0,6)=="record"){
+			
+			string command,location, disease;
+			int cases;
+			stringstream ss(input);
+			ss>>command>>location>>disease>>cases;
+			transform(location.begin(), location.end(), location.begin(), ::toupper);
+			if(locationExists(location)){
+				ofstream recordsFile("records.txt",ios_base::app);
+				recordsFile<<location<<" "<<disease<<" "<<cases<<endl;
+				cout<<"record addedd"<<endl;
+			}
+			else{
+				cout<<"Location doesn't exist"<<endl;
+			}
+		}
+		else if(input=="list diseases"){
+			string location, disease, cases, line;
+			ifstream recordsFile("records.txt");
+			while(getline(recordsFile, line)){
+				
+				istringstream ss(line);
+				ss>>location>>disease>>cases;
+				transform(disease.begin(), disease.end(), disease.begin(), ::toupper);
+				cout<<disease<<endl;
+				
+				
+			}
+			recordsFile.close();
+		
+	}
+	else if(input.substr(0,5)=="where"){
+		string command, disease, line, diseaseLine, location,cases;
+		istringstream ss(input);
+		ss>>command>>disease;
+		ifstream recordsFile("records.txt");
+		while(getline(recordsFile, line)){
+			istringstream sc(line);
+			sc>>location>>diseaseLine>>cases;
+			if(disease==diseaseLine){
+				cout<<location<<endl;
+			}
+			
+		}
+		
+		
+		
+		recordsFile.close();
+	}
+	else if(input.substr(0,5)=="cases"){
+		string command,first,second, line,location,disease;
+		int cases;
+		int totalCases=0;
+		istringstream sr(input);
+		sr>>command>>first>>second;
+		if(locationExists(first)){
+			transform(first.begin(), first.end(), first.begin(),::toupper);
+		  	ifstream recordsFile("records.txt");
+		  	while(getline(recordsFile, line)){
+		  		istringstream rc(line);
+		  		rc>>location>>disease>>cases;
+		  		if((first==location)&&(disease==second)){
+		  			cout<<cases<<endl;
+				  }
+			  }
+			  recordsFile.close();
+			  
+			  
+		}
+		else{
+			ifstream recordsFile("records.txt");
+			while(getline(recordsFile, line)){
+				istringstream sz(line);
+				sz>>location>>disease>>cases;
+				if(first==disease){
+					totalCases+=cases;
+				}
+			}
+			cout<<totalCases<<endl;
+			recordsFile.close();
+		}
 	}
 	
-	else if(input=="help"){
-		displayHelp();
-	}
-	else if(input.substr(0, 3) == "add") {
-		
-        size_t pos = input.find(' '); // Find position of first space
-        if (pos !=string::npos  && input.substr(0, pos) == "add") {
-        string location = input.substr(pos+1);
-        transform(location.begin(), location.end(), location.begin(), ::toupper);
-        ofstream outfile("location.csv", ios_base::app);
-        outfile << location <<endl;
-        outfile.close();
-        cout << "Location added: " << location <<endl;
-           }
-           else{
-           	cout<<"Error occured while adding location"<<endl;
-		   }
-
-    }else if (input.substr(0, 4) == "list") {
-    	size_t pos=input.find(' ');
-//    	if (pos !=string::npos && input.substr(0, pos) == "list"){
-    		if(input.substr(pos+1)=="locations"){
-    	
-            ifstream infile("location.csv");
-            string line;
-            vector<string> locations;
-            while (getline(infile, line)) {
-                locations.push_back(line);
-                }
-                infile.close();
-                sort(locations.begin(),locations.end());
-                vector<string>::iterator i;
-                for (i = locations.begin(); i  != locations.end(); ++i) {
-                 cout << *i <<endl;
-        }
-			}
-			else if(input.substr(pos+1)=="diseases"){
-
-				ifstream infile("records.csv");
-				string line;
-				vector<string> diseases;
-				while(getline(infile,line)){
-
-					istringstream iss(line);
-					string location, disease, num_of_cases;
-					getline(iss, location,',');
-					getline(iss, disease,',');
-					getline(iss, num_of_cases,',');
-			
-					 transform(disease.begin(),disease.end(), disease.begin(), ::toupper);
-                    diseases.push_back(disease);
-					}
-
-				
-				infile.close();
-				
-				sort(diseases.begin(),diseases.end());
-				      vector<string>::iterator i;
-                for (i = diseases.begin(); i  != diseases.end(); ++i) {
-                 cout << *i <<endl;
-        }
-			
-			}
-
-    	
-    
-            
-    } 
-else if (input.substr(0, 6) == "delete") {
-    size_t pos = input.find(' ');
-    if (pos != string::npos && input.substr(0, pos) == "delete") {
-        string location = input.substr(pos + 1);
-        transform(location.begin(), location.end(), location.begin(), ::toupper);
-
-        // Delete location from "location.csv"
-        ifstream locationFile("location.csv");
-        vector<string> lines;
-        string line;
-        bool locationExists = false;
-
-        while (getline(locationFile, line)) {
-            if (line == location) {
-                locationExists = true;
-            } else {
-                lines.push_back(line);
-            }
-        }
-
-        locationFile.close();
-
-        if (locationExists) {
-            ofstream outfile("location.csv");
-            copy(lines.begin(), lines.end(), ostream_iterator<string>(outfile, "\n"));
-            outfile.close();
-//            cout << "Location deleted: " << location << endl;
-
-            // Delete records associated with the location from "records.csv"
-            ifstream recordsFile("records.csv");
-            lines.clear();
-            bool recordExists = false;
-            while (getline(recordsFile, line)) {
-                stringstream ss(line);
-                vector<string> record;
-                string value;
-//reads individual 
-                while (getline(ss, value, ',')) {
-                    record.push_back(value);
-                }
-
-                if (record.size() >= 1 && record[0] == location) {
-                    recordExists = true;
-                } else {
-                    lines.push_back(line);
-                }
-            }
-
-            recordsFile.close();
-
-            if (recordExists) {
-                ofstream recordsOutfile("records.csv");
-                copy(lines.begin(), lines.end(), ostream_iterator<string>(recordsOutfile, "\n"));
-                recordsOutfile.close();
-                cout << "Records deleted for location: " << location << endl;
-            }
-        } else {
-            cout << "Location not found: " << location << endl;
-        }
-    }
-}
-    else if (input.substr(0, 6) == "record") {
-    	size_t pos=input.find(' ');
-    	if (pos !=string::npos && input.substr(0, pos) == "record"){
-    		
-    		
-    		
-    		 string location, disease, cases;
-        stringstream inputStream(input.substr(pos + 1));
-				
-        if (inputStream >> location >> disease >> cases) {
-        	transform(location.begin(), location.end(), location.begin(), ::toupper);
-            // Check if location exists in "location.csv"
-            ifstream locationFile("location.csv");
-            string line;
-            bool locationExists = false;
-            while (getline(locationFile, line)) {
-                if (line == location) {
-                    locationExists = true;
-                    break;
-                }
-            }
-            locationFile.close();
-
-            if (locationExists) {
-                // Add record to the CSV file
-                ofstream outfile("records.csv", ios_base::app);
-                outfile << location << "," << disease << "," << cases << endl;
-                outfile.close();
-                cout << "Record added for location: " << location << endl;
-            } else {
-                cout << "Location not found: " << location << endl;
-            }
-        } else {
-            cout << "Invalid input format. Please provide location, disease, and cases." << endl;
-        }
-    }
-        
-    }
-
-
-else if (input.substr(0, 5) == "where") {
-	
-    size_t pos=input.find(' ');
-    string disease=input.substr(pos+1);
-//    transform(disease.begin(), disease.end(), disease.begin(), ::toupper);
-
-    ifstream infile("records.csv");
-    string line;
-    vector<string> locations;
-
-    while (getline(infile, line)) {
-        istringstream iss(line);
-        string location, currentDisease, num_of_cases;
-        getline(iss, location, ',');
-        getline(iss, currentDisease, ',') >> num_of_cases;
-
-
-            if (currentDisease == disease) {
-                locations.push_back(location);
-            }
-
-    }
-    infile.close();
-
-    if (!locations.empty()) {
-        sort(locations.begin(), locations.end());
-       		      vector<string>::iterator i;
-                for (i = locations.begin(); i  != locations.end(); ++i) {
-                 cout << *i <<endl;
-        }
-    } else {
-        cout << "No locations found with the disease: " << disease << endl;
-    }
-}
-else if (input.substr(0, 5) == "cases") {
-   size_t pos = input.find(' ');
-    string remainingInput = input.substr(pos + 1);
-    stringstream inputStream(remainingInput);
-    string disease;
-    getline(inputStream,disease,' ');
-    
-    ifstream infile("records.csv");
-    string line;
-    int totalCases = 0;
-
-    while (getline(infile, line)) {
-        istringstream iss(line);
-        string recordLocation, currentDisease, num_of_cases;
-        getline(iss, recordLocation, ',');
-        getline(iss, currentDisease, ',');
-        getline(iss, num_of_cases, ',');
-
-    if (currentDisease == disease) {
-    int casesCount = 0;
-    std::stringstream converter(num_of_cases);
-    converter >> casesCount;
-    totalCases += casesCount;
-    }
-}
-
-
-        infile.close();
-
-    if (totalCases > 0) {
-
-        cout << "Total cases of '" << disease << "' =" << totalCases << endl;
-    } else {
-        cout << "No cases found for disease: " << disease << endl;
-    }
-
-
-
-}
-
-else{
-	cout<<"Command doesn't exist"<<endl;
-}
-  	
-
-
 	
 }
-	return 0;
 }
-
-	
-
-	
-
-
